@@ -4,6 +4,8 @@ import EmployeeApp from './EmployeeApp';
 
 import { Employee } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export default async function EmployeePage() {
   let initialData = null;
   let allEmployees: Employee[] = [];
