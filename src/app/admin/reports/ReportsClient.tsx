@@ -1,40 +1,57 @@
 'use client';
 
-  import { useState, useMemo, useCallback } from 'react';
-  import { Expense, Job, Employee, Customer, ExpenseCategory } from '@/types';
-  import { formatKolkataDateTime } from '@/lib/dateUtils';
-  import { Download, Filter, TrendingUp, TrendingDown, Activity, PieChart, Users, Briefcase } from 'lucide-react';
-  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-  
-  export default function ReportsClient({
-    jobs,
-    expenses,
-    employees,
-    categories,
-    customers,
-  }: {
-    jobs: Job[];
-    expenses: Expense[];
-    employees: Employee[];
-    categories: ExpenseCategory[];
-    customers: Customer[];
-  }) {
-    // Filters
-    const [dateRange, setDateRange] = useState('All'); // All, Today, This Week, This Month, Custom
-    const [customStartDate, setCustomStartDate] = useState('');
-    const [customEndDate, setCustomEndDate] = useState('');
-    const [customerFilter, setCustomerFilter] = useState('');
-    const [employeeFilter, setEmployeeFilter] = useState('');
-    const [jobTypeFilter, setJobTypeFilter] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
-    const [jobStatusFilter, setJobStatusFilter] = useState('');
-    const [chargeableFilter, setChargeableFilter] = useState('');
-  
-    // Helpers
-    const getJob = useCallback((id: string) => jobs.find(j => j.id === id), [jobs]);
-    const getCustomer = useCallback((id: string) => customers.find(c => c.id === id), [customers]);
-    const getEmployeeName = useCallback((id: string) => employees.find(e => e.id === id)?.name || 'Unknown', [employees]);
-    const getCategoryName = useCallback((id: string) => categories.find(c => c.id === id)?.name || 'Unknown', [categories]);
+import { useState, useMemo, useCallback } from 'react';
+import { Expense, Job, Employee, Customer, ExpenseCategory } from '@/types';
+import { formatKolkataDateTime } from '@/lib/dateUtils';
+import { 
+  FileDown, 
+  Filter, 
+  TrendingUp, 
+  TrendingDown, 
+  Activity, 
+  BriefcaseBusiness,
+  CalendarDays,
+  Building2,
+  UserRound,
+  Tags,
+  CircleCheck,
+  Receipt,
+  WalletCards,
+  X
+} from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+export default function ReportsClient({
+  jobs,
+  expenses,
+  employees,
+  categories,
+  customers,
+}: {
+  jobs: Job[];
+  expenses: Expense[];
+  employees: Employee[];
+  categories: ExpenseCategory[];
+  customers: Customer[];
+}) {
+  // Filters
+  const [dateRange, setDateRange] = useState('All'); // All, Today, This Week, This Month, Custom
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+  const [employeeFilter, setEmployeeFilter] = useState('');
+  const [jobTypeFilter, setJobTypeFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [jobStatusFilter, setJobStatusFilter] = useState('');
+  const [chargeableFilter, setChargeableFilter] = useState('');
+
+  // Helpers
+  const getJob = useCallback((id: string) => jobs.find(j => j.id === id), [jobs]);
+  const getCustomer = useCallback((id: string) => customers.find(c => c.id === id), [customers]);
+  const getEmployeeName = useCallback((id: string) => employees.find(e => e.id === id)?.name || 'Unknown', [employees]);
+  const getCategoryName = useCallback((id: string) => categories.find(c => c.id === id)?.name || 'Unknown', [categories]);
 
   // Filtered Expenses
   const filteredExpenses = useMemo(() => {
@@ -204,275 +221,440 @@
     document.body.removeChild(link);
   };
 
+  const clearAllFilters = () => {
+    setDateRange('All');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setCustomerFilter('');
+    setEmployeeFilter('');
+    setJobTypeFilter('');
+    setCategoryFilter('');
+    setJobStatusFilter('');
+    setChargeableFilter('');
+  };
+
+  const hasActiveFilters = dateRange !== 'All' || customerFilter || employeeFilter || jobTypeFilter || categoryFilter || jobStatusFilter || chargeableFilter;
+
+  const renderBreakdown = (data: Record<string, number>, type: 'revenue' | 'expense') => {
+    const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    
+    if (entries.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+          <Activity className="w-8 h-8 mb-3 opacity-20" />
+          <span className="text-sm font-medium">No data found</span>
+          <span className="text-xs mt-1 text-slate-400 text-center">Try changing or clearing<br/>one of the filters.</span>
+        </div>
+      );
+    }
+
+    const maxVal = Math.max(...entries.map(e => e[1]));
+
+    return (
+      <div className="space-y-5 mt-2">
+        {entries.map(([label, amt]) => {
+          const percentage = maxVal > 0 ? (amt / maxVal) * 100 : 0;
+          const isRevenue = type === 'revenue';
+          return (
+            <div key={label} className="group cursor-default relative">
+              <div className="flex justify-between items-center text-sm mb-1.5">
+                <span className="text-slate-700 font-medium truncate pr-4">{label}</span>
+                <span className="font-semibold text-slate-900 tabular-nums shrink-0">₹{amt.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="w-full bg-slate-100/80 rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className={`h-1.5 rounded-full transition-all duration-500 ease-out ${isRevenue ? 'bg-blue-500' : 'bg-slate-400'}`} 
+                  style={{ width: `${percentage}%` }}
+                ></div>
+              </div>
+              <div className="absolute inset-0 bg-slate-50/0 group-hover:bg-slate-50/50 transition-colors pointer-events-none rounded-md -mx-2 -my-1"></div>
+            </div>
+          )
+        })}
+      </div>
+    );
+  };
+
+  // Precompute financial overview maximums
+  const maxOverview = Math.max(totalRevenue, totalExpenses, Math.abs(estimatedContribution), 1);
+  const revenuePct = (totalRevenue / maxOverview) * 100;
+  const expensesPct = (totalExpenses / maxOverview) * 100;
+  const contributionPct = (Math.abs(estimatedContribution) / maxOverview) * 100;
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <PieChart className="w-6 h-6 text-blue-600" />
-            Financial Reports
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Analyze revenue, expenses, and overall profitability.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Financial Reports</h1>
+          <p className="text-sm text-slate-500 mt-1.5">Track revenue, expenses, contribution, and operational performance.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={exportCSV}
-            disabled={filteredExpenses.length === 0}
-            className="w-full sm:w-auto bg-white border border-slate-200 text-slate-700 px-5 py-2 rounded-xl hover:bg-slate-50 font-medium whitespace-nowrap shadow-sm transition-all focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-        </div>
+        <button 
+          onClick={exportCSV}
+          disabled={filteredExpenses.length === 0}
+          className="w-full sm:w-auto bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 font-medium shadow-sm transition-all focus:ring-2 focus:ring-blue-500 focus:outline-none flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+        >
+          <FileDown className="w-4 h-4 text-slate-500" />
+          Export CSV
+        </button>
       </div>
 
-      {/* Filters Area */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="flex items-center gap-2 text-slate-500 font-medium text-sm shrink-0 mr-1">
-            <Filter className="w-4 h-4" />
-            Filters:
+      {/* Filter Control Bar */}
+      <Card className="border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-slate-50/50 border-b border-slate-100 p-4 flex items-center justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-slate-800 font-semibold text-sm">
+              <Filter className="w-4 h-4 text-slate-500" />
+              Filters
+            </div>
+            <span className="text-xs text-slate-500 mt-0.5">Refine the report by date, customer, employee, job, and expense criteria.</span>
           </div>
-          
-          <Select value={dateRange} onValueChange={(v) => setDateRange(v || 'All')}>
-            <SelectTrigger className="w-[140px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Dates" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Dates</SelectItem>
-              <SelectItem value="Today">Today</SelectItem>
-              <SelectItem value="This Week">This Week</SelectItem>
-              <SelectItem value="This Month">This Month</SelectItem>
-              <SelectItem value="Custom">Custom Range</SelectItem>
-            </SelectContent>
-          </Select>
-          
+        </div>
+        
+        <div className="p-4 sm:p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <CalendarDays className="w-3 h-3" /> All Dates
+              </label>
+              <Select value={dateRange} onValueChange={(v) => setDateRange(v || 'All')}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Dates" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All" label="All Dates">All Dates</SelectItem>
+                  <SelectItem value="Today" label="Today">Today</SelectItem>
+                  <SelectItem value="This Week" label="This Week">This Week</SelectItem>
+                  <SelectItem value="This Month" label="This Month">This Month</SelectItem>
+                  <SelectItem value="Custom" label="Custom Range">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 className="w-3 h-3" /> Customer
+              </label>
+              <Select value={customerFilter || 'all'} onValueChange={(v) => setCustomerFilter(v === 'all' || !v ? '' : v)}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Customers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" label="All Customers">All Customers</SelectItem>
+                  {customers.map(c => <SelectItem key={c.id} value={c.id} label={c.name}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <UserRound className="w-3 h-3" /> Employee
+              </label>
+              <Select value={employeeFilter || 'all'} onValueChange={(v) => setEmployeeFilter(v === 'all' || !v ? '' : v)}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Employees" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" label="All Employees">All Employees</SelectItem>
+                  {employees.map(e => <SelectItem key={e.id} value={e.id} label={e.name}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <BriefcaseBusiness className="w-3 h-3" /> Job Type
+              </label>
+              <Select value={jobTypeFilter || 'all'} onValueChange={(v) => setJobTypeFilter(v === 'all' || !v ? '' : v)}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Job Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" label="All Job Types">All Job Types</SelectItem>
+                  <SelectItem value="Repair" label="Repair">Repair</SelectItem>
+                  <SelectItem value="Installation" label="Installation">Installation</SelectItem>
+                  <SelectItem value="Maintenance" label="Maintenance">Maintenance</SelectItem>
+                  <SelectItem value="Inspection" label="Inspection">Inspection</SelectItem>
+                  <SelectItem value="Other" label="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Tags className="w-3 h-3" /> Category
+              </label>
+              <Select value={categoryFilter || 'all'} onValueChange={(v) => setCategoryFilter(v === 'all' || !v ? '' : v)}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" label="All Categories">All Categories</SelectItem>
+                  {categories.map(c => <SelectItem key={c.id} value={c.id} label={c.name}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <CircleCheck className="w-3 h-3" /> Job Status
+              </label>
+              <Select value={jobStatusFilter || 'all'} onValueChange={(v) => setJobStatusFilter(v === 'all' || !v ? '' : v)}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Job Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" label="All Job Statuses">All Job Statuses</SelectItem>
+                  <SelectItem value="Open" label="Open">Open</SelectItem>
+                  <SelectItem value="In Progress" label="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Completed" label="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled" label="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Receipt className="w-3 h-3" /> Expenses
+              </label>
+              <Select value={chargeableFilter || 'all'} onValueChange={(v) => setChargeableFilter(v === 'all' || !v ? '' : v)}>
+                <SelectTrigger className="h-9 w-full bg-white border-slate-200 shadow-sm rounded-md hover:bg-slate-50 transition-colors focus:ring-1 focus:ring-blue-500 text-sm">
+                  <SelectValue placeholder="All Expenses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" label="All Expenses">All Expenses</SelectItem>
+                  <SelectItem value="Chargeable" label="Chargeable to Customer">Chargeable to Customer</SelectItem>
+                  <SelectItem value="Company" label="Paid by Company">Paid by Company</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {dateRange === 'Custom' && (
-            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-200">
-              <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="px-3 py-1.5 bg-transparent text-sm text-slate-700 focus:outline-none" />
-              <span className="text-slate-400 font-medium text-sm">to</span>
-              <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="px-3 py-1.5 bg-transparent text-sm text-slate-700 focus:outline-none" />
+            <div className="mt-4 flex items-center gap-3 bg-slate-50/80 p-2 rounded-md border border-slate-200 max-w-sm">
+              <input 
+                type="date" 
+                value={customStartDate} 
+                onChange={(e) => setCustomStartDate(e.target.value)} 
+                className="px-2 py-1 bg-white border border-slate-200 rounded text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full" 
+              />
+              <span className="text-slate-400 font-medium text-xs uppercase tracking-wider">to</span>
+              <input 
+                type="date" 
+                value={customEndDate} 
+                onChange={(e) => setCustomEndDate(e.target.value)} 
+                className="px-2 py-1 bg-white border border-slate-200 rounded text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full" 
+              />
             </div>
           )}
+        </div>
+      </Card>
 
-          <Select value={customerFilter || 'all'} onValueChange={(v) => setCustomerFilter(v === 'all' || !v ? '' : v)}>
-            <SelectTrigger className="w-[160px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Customers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Customers</SelectItem>
-              {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          
-          <Select value={employeeFilter || 'all'} onValueChange={(v) => setEmployeeFilter(v === 'all' || !v ? '' : v)}>
-            <SelectTrigger className="w-[160px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Employees" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Employees</SelectItem>
-              {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          
-          <Select value={jobTypeFilter || 'all'} onValueChange={(v) => setJobTypeFilter(v === 'all' || !v ? '' : v)}>
-            <SelectTrigger className="w-[150px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Job Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Job Types</SelectItem>
-              <SelectItem value="Repair">Repair</SelectItem>
-              <SelectItem value="Installation">Installation</SelectItem>
-              <SelectItem value="Maintenance">Maintenance</SelectItem>
-              <SelectItem value="Inspection">Inspection</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={categoryFilter || 'all'} onValueChange={(v) => setCategoryFilter(v === 'all' || !v ? '' : v)}>
-            <SelectTrigger className="w-[150px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          
-          <Select value={jobStatusFilter || 'all'} onValueChange={(v) => setJobStatusFilter(v === 'all' || !v ? '' : v)}>
-            <SelectTrigger className="w-[160px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Job Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Job Statuses</SelectItem>
-              <SelectItem value="Open">Open</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Completed">Completed</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={chargeableFilter || 'all'} onValueChange={(v) => setChargeableFilter(v === 'all' || !v ? '' : v)}>
-            <SelectTrigger className="w-[190px] bg-white border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 transition-colors">
-              <SelectValue placeholder="All Expense Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Expense Types</SelectItem>
-              <SelectItem value="Chargeable">Chargeable to Customer</SelectItem>
-              <SelectItem value="Company">Paid by Company</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {(dateRange !== 'All' || customerFilter || employeeFilter || jobTypeFilter || categoryFilter || jobStatusFilter || chargeableFilter) && (
+      {/* Active Filters State */}
+      {hasActiveFilters && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-sm text-slate-500 font-medium shrink-0">Showing results for:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {dateRange !== 'All' && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                {dateRange === 'Custom' ? `${customStartDate || '?'} to ${customEndDate || '?'}` : dateRange}
+                <button onClick={() => { setDateRange('All'); setCustomStartDate(''); setCustomEndDate(''); }} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {customerFilter && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                Customer: {getCustomer(customerFilter)?.name || 'Unknown'}
+                <button onClick={() => setCustomerFilter('')} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {employeeFilter && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                Employee: {getEmployeeName(employeeFilter)}
+                <button onClick={() => setEmployeeFilter('')} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {jobTypeFilter && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                Job: {jobTypeFilter}
+                <button onClick={() => setJobTypeFilter('')} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {categoryFilter && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                Category: {getCategoryName(categoryFilter)}
+                <button onClick={() => setCategoryFilter('')} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {jobStatusFilter && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                Status: {jobStatusFilter}
+                <button onClick={() => setJobStatusFilter('')} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {chargeableFilter && (
+              <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-normal px-2.5 py-1">
+                {chargeableFilter === 'Chargeable' ? 'Chargeable' : 'Company Paid'}
+                <button onClick={() => setChargeableFilter('')} className="ml-1.5 text-slate-400 hover:text-slate-700 focus:outline-none"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            
             <button 
-              onClick={() => {
-                setDateRange('All');
-                setCustomStartDate('');
-                setCustomEndDate('');
-                setCustomerFilter('');
-                setEmployeeFilter('');
-                setJobTypeFilter('');
-                setCategoryFilter('');
-                setJobStatusFilter('');
-                setChargeableFilter('');
-              }}
-              className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-xl font-medium transition-colors shrink-0 ml-auto"
+              onClick={clearAllFilters} 
+              className="text-[13px] text-blue-600 hover:text-blue-800 font-medium transition-colors ml-1 px-2 py-1 rounded hover:bg-blue-50"
             >
-              Clear Filters
+              Clear filters
             </button>
-          )}
+          </div>
         </div>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Revenue */}
+        <Card className="hover:border-slate-300 hover:shadow-md transition-all border-slate-200 rounded-xl overflow-hidden group">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-500" />
+                Revenue
+              </h3>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-slate-900 tabular-nums">
+                ₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </span>
+              <span className="text-sm text-slate-500 mt-1 font-medium">{filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Expenses */}
+        <Card className="hover:border-slate-300 hover:shadow-md transition-all border-slate-200 rounded-xl overflow-hidden group">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-slate-400" />
+                Expenses
+              </h3>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-slate-900 tabular-nums">
+                ₹{totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </span>
+              <span className="text-sm text-slate-500 mt-1 font-medium">{filteredExpenses.length} expense {filteredExpenses.length === 1 ? 'record' : 'records'}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Estimated Contribution */}
+        <Card className="border-blue-200/60 bg-gradient-to-br from-blue-50/50 to-white shadow-sm hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2">
+                <WalletCards className="w-4 h-4 text-blue-600" />
+                Estimated Contribution
+              </h3>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-blue-900 tabular-nums">
+                ₹{estimatedContribution.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </span>
+              <span className="text-sm text-blue-700/80 mt-1 font-medium">Revenue − Expenses</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <TrendingUp className="w-16 h-16 text-emerald-600" />
+      {/* Financial Overview (Visualization) */}
+      {(totalRevenue > 0 || totalExpenses > 0) && (
+        <Card className="border-slate-200 shadow-sm rounded-xl overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+            <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-slate-500" />
+              Financial Overview
+            </h2>
           </div>
-          <h3 className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-2">
-            Total Revenue
-          </h3>
-          <p className="text-3xl font-bold text-slate-900 mt-2">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-          <div className="flex items-center gap-2 mt-4 text-sm text-slate-500">
-            <Briefcase className="w-4 h-4" />
-            From {filteredJobs.length} Jobs
+          <div className="p-6 sm:p-8">
+            <div className="max-w-4xl mx-auto space-y-7">
+              {/* Revenue */}
+              <div>
+                <div className="flex justify-between items-end mb-2.5">
+                  <span className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Revenue</span>
+                  <span className="text-xl font-bold text-slate-900 tabular-nums">₹{totalRevenue.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                  <div className="bg-blue-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${revenuePct}%` }}></div>
+                </div>
+              </div>
+              
+              {/* Expenses */}
+              <div>
+                <div className="flex justify-between items-end mb-2.5">
+                  <span className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Expenses</span>
+                  <span className="text-xl font-bold text-slate-900 tabular-nums">₹{totalExpenses.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                  <div className="bg-slate-400 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${expensesPct}%` }}></div>
+                </div>
+              </div>
+
+              {/* Contribution */}
+              <div>
+                <div className="flex justify-between items-end mb-2.5">
+                  <span className="text-sm font-semibold text-blue-800 uppercase tracking-wider">Contribution</span>
+                  <span className={`text-xl font-bold tabular-nums ${estimatedContribution >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                    ₹{estimatedContribution.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-1000 ease-out ${estimatedContribution >= 0 ? 'bg-blue-600' : 'bg-red-500'}`} style={{ width: `${contributionPct}%` }}></div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <TrendingDown className="w-16 h-16 text-red-600" />
-          </div>
-          <h3 className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-2">
-            Total Expenses
-          </h3>
-          <p className="text-3xl font-bold text-red-600 mt-2">₹{totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-          <div className="flex items-center gap-2 mt-4 text-sm text-slate-500">
-            <Activity className="w-4 h-4" />
-            From {filteredExpenses.length} Records
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-          <h3 className="text-sm font-medium text-blue-700 mb-1 flex items-center gap-2 relative z-10">
-            Estimated Contribution
-          </h3>
-          <p className="text-3xl font-bold text-blue-700 mt-2 relative z-10">₹{estimatedContribution.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-          <p className="text-xs text-blue-600/70 mt-4 relative z-10 font-medium">Net = Revenue - Expenses</p>
-        </div>
-      </div>
+        </Card>
+      )}
 
       {/* Breakdowns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <Briefcase className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-slate-900">Revenue by Job Type</h3>
-          </div>
-          {Object.keys(revenueByJobType).length > 0 ? (
-            <div className="space-y-4">
-              {Object.entries(revenueByJobType).sort((a,b)=>b[1]-a[1]).map(([type, amt]) => {
-                const percentage = (amt / totalRevenue) * 100;
-                return (
-                  <div key={type}>
-                    <div className="flex justify-between items-center text-sm mb-1">
-                      <span className="text-slate-700 font-medium">{type}</span>
-                      <span className="font-semibold text-slate-900">₹{amt.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${percentage}%` }}></div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-slate-500 text-sm">No revenue data available</div>
-          )}
-        </div>
+        <Card className="border-slate-200 shadow-sm rounded-xl">
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <CardTitle className="text-[15px] font-semibold text-slate-900 flex items-center gap-2">
+              <BriefcaseBusiness className="w-4 h-4 text-slate-500" />
+              Revenue by Job Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 px-5">
+            {renderBreakdown(revenueByJobType, 'revenue')}
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-              <PieChart className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-slate-900">Expenses by Category</h3>
-          </div>
-          {Object.keys(expensesByCategory).length > 0 ? (
-            <div className="space-y-4">
-              {Object.entries(expensesByCategory).sort((a,b)=>b[1]-a[1]).map(([cat, amt]) => {
-                const percentage = (amt / totalExpenses) * 100;
-                return (
-                  <div key={cat}>
-                    <div className="flex justify-between items-center text-sm mb-1">
-                      <span className="text-slate-700 font-medium">{cat}</span>
-                      <span className="font-semibold text-red-600">₹{amt.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${percentage}%` }}></div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-slate-500 text-sm">No expense data available</div>
-          )}
-        </div>
+        <Card className="border-slate-200 shadow-sm rounded-xl">
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <CardTitle className="text-[15px] font-semibold text-slate-900 flex items-center gap-2">
+              <Tags className="w-4 h-4 text-slate-500" />
+              Expenses by Category
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 px-5">
+            {renderBreakdown(expensesByCategory, 'expense')}
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              <Users className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-slate-900">Expenses by Employee</h3>
-          </div>
-          {Object.keys(expensesByEmployee).length > 0 ? (
-            <div className="space-y-4">
-              {Object.entries(expensesByEmployee).sort((a,b)=>b[1]-a[1]).map(([emp, amt]) => {
-                const percentage = (amt / totalExpenses) * 100;
-                return (
-                  <div key={emp}>
-                    <div className="flex justify-between items-center text-sm mb-1">
-                      <span className="text-slate-700 font-medium truncate pr-4">{emp}</span>
-                      <span className="font-semibold text-red-600 shrink-0">₹{amt.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${percentage}%` }}></div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-slate-500 text-sm">No expense data available</div>
-          )}
-        </div>
+        <Card className="border-slate-200 shadow-sm rounded-xl">
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <CardTitle className="text-[15px] font-semibold text-slate-900 flex items-center gap-2">
+              <UserRound className="w-4 h-4 text-slate-500" />
+              Expenses by Employee
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 px-5">
+            {renderBreakdown(expensesByEmployee, 'expense')}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
+
