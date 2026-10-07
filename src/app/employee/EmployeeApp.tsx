@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { login, logout, addCustomer, addJob, submitExpense } from '@/actions/employee';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 function CreateCustomer({ onSave, onCancel }: any) {
   const [name, setName] = useState('');
@@ -118,10 +119,18 @@ function AddExpense({ categories, selectedJob, onSave, onCancel }: any) {
   return (
     <div className="bg-white text-gray-900 p-6 rounded-xl shadow-sm border border-gray-200 space-y-5">
       <h3 className="font-semibold text-lg text-gray-800 border-b pb-3 mb-4">Add Expense</h3>
-      <select className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm text-sm transition-shadow" value={categoryId} onChange={e => setCategoryId(e.target.value)}>
-        <option value="">Select Category</option>
-        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-      </select>
+      <Select value={categoryId} onValueChange={(val) => setCategoryId(val || "")}>
+        <SelectTrigger className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm text-sm transition-shadow h-auto">
+          <SelectValue placeholder="Select Category" />
+        </SelectTrigger>
+        <SelectContent alignItemWithTrigger={false} side="bottom" sideOffset={4} className="max-h-60 overflow-y-auto">
+          {categories.map((c: any) => (
+            <SelectItem key={c.id} value={c.id} label={c.name}>
+              {c.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <input type="number" placeholder="Amount (INR)" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm text-sm transition-shadow" value={amount} onChange={e => setAmount(e.target.value)} />
       <input placeholder="Description" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm text-sm transition-shadow" value={desc} onChange={e => setDesc(e.target.value)} />
       
