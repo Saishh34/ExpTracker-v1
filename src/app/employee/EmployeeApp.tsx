@@ -121,7 +121,13 @@ function AddExpense({ categories, selectedJob, onSave, onCancel }: any) {
       <h3 className="font-semibold text-lg text-gray-800 border-b pb-3 mb-4">Add Expense</h3>
       <Select value={categoryId} onValueChange={(val) => setCategoryId(val || "")}>
         <SelectTrigger className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm text-sm transition-shadow h-auto">
-          <SelectValue placeholder="Select Category" />
+          <SelectValue placeholder="Select Category">
+            {(val: string | null) => {
+              if (!val) return "Select Category";
+              const category = categories.find((c: any) => c.id === val);
+              return category ? category.name : "Select Category";
+            }}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent alignItemWithTrigger={false} side="bottom" sideOffset={4} className="max-h-60 overflow-y-auto">
           {categories.map((c: any) => (
