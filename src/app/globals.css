@@ -29,8 +29,8 @@
 }
 
 :root {
-  --background-color: #f3f7fc;
-  --background: #f3f7fc;
+  --background-color: #f5f7fb;
+  --background: #f5f7fb;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -62,14 +62,61 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Soft Glass Tokens (Light) */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(226, 232, 240, 0.85);
+  --glass-card: rgba(255, 255, 255, 0.88);
+  --glass-card-border: rgba(226, 232, 240, 0.9);
+}
+
+.dark {
+  --background-color: #090d16;
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --card: #131b2e;
+  --card-foreground: #f8fafc;
+  --popover: #131b2e;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --destructive: #f87171;
+  --border: #334155;
+  --input: #334155;
+  --ring: #3b82f6;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3b82f6;
+
+  /* Soft Glass Tokens (Dark) */
+  --glass-bg: rgba(15, 23, 42, 0.75);
+  --glass-border: rgba(51, 65, 85, 0.65);
+  --glass-card: rgba(19, 27, 46, 0.86);
+  --glass-card-border: rgba(51, 65, 85, 0.8);
 }
 
 body {
   background-color: var(--background-color);
-  background-image: linear-gradient(to bottom, #eaf0f8 0%, #f3f7fc 40%, #f8fafc 100%);
+  background-image: linear-gradient(to bottom, #eaf0f8 0%, #f5f7fb 40%, #f8fafc 100%);
   background-attachment: fixed;
   background-repeat: no-repeat;
   min-height: 100vh;
+}
+
+.dark body, body:has(.dark), html.dark body {
+  background-color: #090d16;
+  background-image: linear-gradient(to bottom, #060911 0%, #090d16 40%, #0f172a 100%);
 }
 
 @theme inline {
@@ -125,4 +172,19 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+@utility glass-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+@utility glass-card {
+  background-color: var(--glass-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-card-border);
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.02);
 }
